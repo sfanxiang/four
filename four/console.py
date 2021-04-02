@@ -53,7 +53,10 @@ class _Executor():
 
     def exec_nodes(self, nodes, exception):
         try:
-            compiled = compile(_ast.Module(body=nodes), filename='<executor>', mode='exec')
+            if 'type_ignores' in  _ast.Module._fields:
+                compiled = compile(_ast.Module(body=nodes, type_ignores=[]), filename='<executor>', mode='exec')
+            else:
+                compiled = compile(_ast.Module(body=nodes), filename='<executor>', mode='exec')
             exec(compiled, self.globals, self.locals)
         except:
             raise exception(_traceback.format_exc())
