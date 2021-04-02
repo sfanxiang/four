@@ -434,7 +434,7 @@ def start(globals, return_server=False):
     def serve(handler):
         with server:
             server.serve_forever()
-    _threading.Thread(target=serve, args=(handler,)).start()
+    _threading.Thread(target=serve, args=(handler,), daemon=True).start()
 
     if return_server:
         return port, handler.root_path, server
