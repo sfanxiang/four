@@ -28,8 +28,11 @@ class _History():
         with self.lock:
             return self.version, self.start, self.value
 
-    def append(self, value):
+    def append(self, value, sep=False):
         with self.lock:
+            if sep and self.value:
+                value = b'\n' + value
+
             if len(value) > self.len:
                 self.start += len(self.value) + (len(value) - self.len)
                 self.value = value[-self.len:]
@@ -93,7 +96,7 @@ class _Executor():
             return _traceback.format_exc()
 
     def exec_and_update_handler(self, code):
-        self.handler.history.append(code + b'\n')
+        self.handler.history.append(code + b'\n', sep=True)
         result = self.exec_context(code)
         if result:
             self.handler.history.append((result + '\n').encode('utf-8'))
@@ -226,6 +229,7 @@ def make_handler(globals):
     Handler.html_source = br'''<!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8">
 <script>
 var authKey = "''' + Handler.auth_key + br'''";
 var historyVersion = 0;
@@ -378,6 +382,42 @@ function historyDaemon() {
         function() {});
 }
 
+function updateCodeInputType() {
+    var formCodeDiv = document.getElementById('formCodeDiv');
+    while (formCodeDiv.firstChild !== null) {
+        formCodeDiv.removeChild(formCodeDiv.firstChild);
+    }
+
+    var codeMultiLine = document.getElementById('codeMultiLine');
+    var code = null;
+    if (codeMultiLine.checked) {
+        code = document.createElement("textarea");
+        code.id = "code";
+        code.name = "code";
+        code.rows = 6;
+        code.cols = 24;
+        code.value = "";
+    } else {
+        code = document.createElement("input");
+        code.type = "text";
+        code.id = "code";
+        code.name = "code";
+        code.value = "";
+    }
+    formCodeDiv.appendChild(code);
+}
+
+function listenForCodeInputTypeChange() {
+    var codeSingleLine = document.getElementById('codeSingleLine');
+    codeSingleLine.addEventListener('change', function(event) {
+        updateCodeInputType();
+    });
+    var codeMultiLine = document.getElementById('codeMultiLine');
+    codeMultiLine.addEventListener('change', function(event) {
+        updateCodeInputType();
+    });
+}
+
 function runOnload() {
     var history = document.getElementById('history');
     history.appendChild(historyText);
@@ -389,11 +429,16 @@ function runOnload() {
         var codeElement = document.getElementById('code');
         var code = codeElement.value;
         codeElement.value = '';
+        if (historyText.data.length !== 0)
+            historyText.data += '\n';
         historyText.data += code + '\n';
 
         sendCode(code, function(s) {}, function() {});
         return false;
     });
+
+    updateCodeInputType();
+    listenForCodeInputTypeChange();
 
     var clear = document.getElementById('clear');
     clear.addEventListener('click', function(event) {
@@ -407,6 +452,12 @@ function runOnload() {
 }
 </script>
 <style>
+#formActionsDiv {
+    padding-top: 0.5em;
+}
+#formOptionsDiv {
+    padding-top: 0.5em;
+}
 #code {
     font-family: monospace;
 }
@@ -417,9 +468,17 @@ function runOnload() {
 <code id="history"></code>
 </pre>
 <form id="form" action="javascript:void(0);">
-    <input type="text" id="code" name="code" value="">
-    <input type="submit" value="Submit">
-    <input type="button" id="clear" value="Clear output">
+    <div id="formCodeDiv"></div>
+    <div id="formActionsDiv">
+        <input type="submit" value="Submit">
+        <input type="button" id="clear" value="Clear history">
+    </div>
+    <div id="formOptionsDiv">
+        <input type="radio" id="codeSingleLine" name="codeInputType" value="codeSingleLine" checked>
+        <label for="codeSingleLine">Single-line</label>
+        <input type="radio" id="codeMultiLine" name="codeInputType" value="codeMultiLine">
+        <label for="codeMultiLine">Multi-line</label>
+    </div>
 </form>
 </body>
 </html>'''
