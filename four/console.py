@@ -52,7 +52,7 @@ class _Executor():
     def __init__(self, handler, globals):
         self.handler = handler
         self.globals = globals
-        self.locals = {}
+        self.locals = globals
 
     def exec_nodes(self, nodes, exception):
         try:
