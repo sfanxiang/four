@@ -105,8 +105,6 @@ class _Executor():
         _threading.Thread(target=self.exec_and_update_handler, args=(code,), name='Executor').start()
 
 class HTTPHandler(_server.BaseHTTPRequestHandler):
-    allow_reuse_address = True
-
     def parse_url(self):
         self.url = _urlparse(self.path)
         self.queries = _parse_qs(self.url.query)
@@ -488,8 +486,11 @@ function runOnload() {
 
 
 def start(globals, host='', port=0, auth_key=None, return_server=False):
+    class Server(_socketserver.TCPServer):
+        allow_reuse_address = True
+
     handler = make_handler(globals, auth_key=auth_key)
-    server = _socketserver.TCPServer((host, port), handler)
+    server = Server((host, port), handler)
     port = server.socket.getsockname()[1]
 
     def serve(handler):
