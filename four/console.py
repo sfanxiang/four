@@ -214,7 +214,7 @@ class HTTPHandler(_server.BaseHTTPRequestHandler):
         self.send_header('x-colab-notebook-cache-control', 'no-cache')
         self.end_headers()
 
-def make_handler(globals):
+def make_handler(globals, auth_key=None):
     class Handler(HTTPHandler):
         pass
 
@@ -223,7 +223,7 @@ def make_handler(globals):
         return ''.join(_secrets.choice(alphabet) for i in range(24)).encode('utf-8')
 
     Handler.history = _History(524288)
-    Handler.auth_key = get_secret()
+    Handler.auth_key = get_secret() if auth_key is None else auth_key
     Handler.root_path = '/?auth=' + Handler.auth_key.decode('utf-8')
     Handler.executor = _Executor(Handler, globals)
     Handler.html_source = br'''<!DOCTYPE html>
@@ -485,8 +485,8 @@ function runOnload() {
     return Handler
 
 
-def start(globals, host='', port=0, return_server=False):
-    handler = make_handler(globals)
+def start(globals, host='', port=0, auth_key=None, return_server=False):
+    handler = make_handler(globals, auth_key=auth_key)
     server = _socketserver.TCPServer((host, port), handler)
     port = server.socket.getsockname()[1]
 
