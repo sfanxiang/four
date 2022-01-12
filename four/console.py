@@ -105,6 +105,8 @@ class _Executor():
         _threading.Thread(target=self.exec_and_update_handler, args=(code,), name='Executor').start()
 
 class HTTPHandler(_server.BaseHTTPRequestHandler):
+    allow_reuse_address = True
+
     def parse_url(self):
         self.url = _urlparse(self.path)
         self.queries = _parse_qs(self.url.query)
