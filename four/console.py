@@ -485,9 +485,9 @@ function runOnload() {
     return Handler
 
 
-def start(globals, return_server=False):
+def start(globals, host='', port=0, return_server=False):
     handler = make_handler(globals)
-    server = _socketserver.TCPServer(('', 0), handler)
+    server = _socketserver.TCPServer((host, port), handler)
     port = server.socket.getsockname()[1]
 
     def serve(handler):
